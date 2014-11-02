@@ -67,16 +67,24 @@ const Status BufMgr::allocBuf(int & frame) {
 	while(true){
 		advanceClock();
 		frame = clockHand;
+		cout<<"Allocating "<<frame<<" frame (in process)!"<<endl;
+		//cout<<numBufs<<" buf size!"<<endl; 
 		curFrame = &(bufTable[frame]);
+		//cout<<"Made it?!"<<endl;
+		cout<<curFrame->valid<<"!"<<endl;
 		//frame not having a valid page: empty
 		if(!curFrame->valid)	break;
 		//frame has a valid page
 		else{
+			cout<<"Frame Occupied!"<<endl;
 			if(curFrame->refbit)
 				curFrame->refbit = false;	//and advance clock
 			else{
+				cout<<"Not ref!"<<endl;
 				if(!curFrame->pinCnt){
+					cout<<"Not Pinned!"<<endl;
 					if(curFrame->dirty){	//flushes page to Disk if dirty
+						cout<<"Dirty!"<<endl;
 						status = hashTable->remove(curFrame->file, curFrame->pageNo);
 						if(status != OK)	
 							return status;
@@ -89,6 +97,7 @@ const Status BufMgr::allocBuf(int & frame) {
 				}
 				//Page pinned
 				else{
+					cout<<"Pinned!"<<endl;
 					pdFrame++;
 					if(pdFrame == numBufs)
 						return BUFFEREXCEEDED;
@@ -99,7 +108,8 @@ const Status BufMgr::allocBuf(int & frame) {
 			}
 		}
 	}
-	delete curFrame;
+	//cout<<"Before delete!"<<endl;
+	//delete curFrame;
 	cout<<frame<<" Allocation success!"<<endl;
 	return OK;
 }
@@ -112,7 +122,7 @@ const Status BufMgr::readPage(File* file, const int PageNo, Page*& page) {
 	//Page already in the buffer pool
 	if(status == OK){
 		cout<<"In the buffer pool!"<<endl;
-		ASSERT(bufTable[frameNo].valid);
+		if(!bufTable[frameNo].valid) cout<<"Should be valid!";
 		page = &(bufPool[frameNo]);
 		bufTable[frameNo].refbit = true;
 		bufTable[frameNo].pinCnt++;		
@@ -130,6 +140,7 @@ const Status BufMgr::readPage(File* file, const int PageNo, Page*& page) {
 		bufTable[frameNo].Set(file, PageNo);
 			
 	}
+	cout<<"Read Success!"<<endl;
 	return OK;
 }
 
@@ -160,6 +171,8 @@ const Status BufMgr::allocPage(File* file, int& pageNo, Page*& page)  {
 	if(status != OK) return status;
 	bufTable[frameNo].Set(file, pageNo);
 	page = &(bufPool[frameNo]);
+	//load page from disk to buffer pool
+	status = file->readPage(pageNo, page);
 	//status = readPage(file, pageNo, page);
 	//if(status != OK) return status;
 	cout<<"Page Allocation Success!"<<endl;
