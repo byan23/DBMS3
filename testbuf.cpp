@@ -36,6 +36,7 @@ int main()
 
     Error       error;
     DB          db;
+	File* fileTmp;
     File*	file1;
     File*	file2;
     File* 	file3;
@@ -81,6 +82,7 @@ int main()
     CALL(db.createFile("test.4"));
 
     CALL(db.openFile("test.1", file1));
+	CALL(db.openFile("test.1", fileTmp));
     CALL(db.openFile("test.2", file2));
     CALL(db.openFile("test.3", file3));
     CALL(db.openFile("test.4", file4));
@@ -155,7 +157,9 @@ int main()
     cout << "Pages in order.  Values matching page number.\n\n";
 
     for (i = 1; i < num/3; i++) {
+	//cout<<"Actually in the loop!-----------------"<<endl;
       CALL(bufMgr->readPage(file1, i, page2));
+	//cout<<(char*)page2<<"not printed------------"<<endl;
       sprintf((char*)&cmp, "test.1 Page %d %7.1f", i, (float)i);
       ASSERT(memcmp(page2, &cmp, strlen((char*)&cmp)) == 0);
       CALL(bufMgr->unPinPage(file1, i, false));
@@ -207,7 +211,7 @@ int main()
     error.print(status);
 
     cout << "Test passed" <<endl<<endl;
-
+  	bufMgr->printSelf();
     for (i = 0; i < num; i++) {
       CALL(bufMgr->allocPage(file4, j[i], page));
       sprintf((char*)page, "test.4 Page %d %7.1f", j[i], (float)j[i]);
@@ -233,8 +237,12 @@ int main()
     cout << "Pages in order.  Values matching page number.\n\n";
 
     for (i = 1; i < num; i++) {
+	//cout<<"before "<<(char*)page<<endl;
+	//if(file1 == fileTmp) cout<<"GOOD BOY!"<<endl;
       CALL(bufMgr->readPage(file1, i, page));
+	//cout<<"after "<<(char*)page<<endl;
       sprintf((char*)&cmp, "test.1 Page %d %7.1f", i, (float)i);
+	//cout<<(char*)page<<endl;
       ASSERT(memcmp(page, &cmp, strlen((char*)&cmp)) == 0);
       cout << (char*)page << endl;
     }
@@ -249,20 +257,23 @@ int main()
 
     for (i = 1; i < num; i++) 
       CALL(bufMgr->unPinPage(file1, i, true));
-
+     cout<<"Ready to flush!"<<endl;
     CALL(bufMgr->flushFile(file1));
 
-
+	cout<<"FLUSH SUCCESS!"<<endl;
     CALL(db.closeFile(file1));
+	cout<<"close file1 success!"<<endl;
     CALL(db.closeFile(file2));
+	cout<<"close file2 success!"<<endl;
     CALL(db.closeFile(file3));
+	cout<<"close file3 success!"<<endl;
     CALL(db.closeFile(file4));
-
+	cout<<"CLOSE SUCCESS!"<<endl;
 	CALL(db.destroyFile("test.1"));
 	CALL(db.destroyFile("test.2"));
 	CALL(db.destroyFile("test.3"));
     CALL(db.destroyFile("test.4"));
-
+	cout<<"DESTROY SUCCESS!"<<endl;
     delete bufMgr;
 
     cout << endl << "Passed all tests." << endl;

@@ -59,7 +59,7 @@ BufMgr::~BufMgr() {
 
 const Status BufMgr::allocBuf(int & frame) {
 	//Add a variable to count for pin number for a iteration and clear it after one iteration
-	cout<<"Allocating "<<frame<<" frame"<<endl;
+	//cout<<"Allocating "<<frame<<" frame"<<endl;
 	int pdFrame = 0;
 	int initPos = clockHand;
 	Status status;
@@ -67,37 +67,41 @@ const Status BufMgr::allocBuf(int & frame) {
 	while(true){
 		advanceClock();
 		frame = clockHand;
-		cout<<"Allocating "<<frame<<" frame (in process)!"<<endl;
+		//cout<<"Allocating "<<frame<<" frame (in process)!"<<endl;
 		//cout<<numBufs<<" buf size!"<<endl; 
 		curFrame = &(bufTable[frame]);
 		//cout<<"Made it?!"<<endl;
-		cout<<curFrame->valid<<"!"<<endl;
+		//cout<<curFrame->valid<<"!"<<endl;
 		//frame not having a valid page: empty
 		if(!curFrame->valid)	break;
 		//frame has a valid page
 		else{
-			cout<<"Frame Occupied!"<<endl;
+			//cout<<"Frame Occupied!"<<endl;
 			if(curFrame->refbit)
 				curFrame->refbit = false;	//and advance clock
 			else{
-				cout<<"Not ref!"<<endl;
+				//cout<<"Not ref!"<<endl;
 				if(!curFrame->pinCnt){
-					cout<<"Not Pinned!"<<endl;
+					//cout<<"Not Pinned!"<<endl;
+					status = hashTable->remove(curFrame->file, curFrame->pageNo);
+					if(status != OK) return status;
 					if(curFrame->dirty){	//flushes page to Disk if dirty
-						cout<<"Dirty!"<<endl;
-						status = hashTable->remove(curFrame->file, curFrame->pageNo);
-						if(status != OK)	
-							return status;
+						//cout<<"Dirty!"<<endl;
+						//status = hashTable->remove(curFrame->file, curFrame->pageNo);
+						//if(status != OK)	
+							//return status;
 						status =  curFrame->file->writePage(curFrame->pageNo, &(bufPool[frame]));
 						if(status != OK)
 							return status;
 					}
+					//status = hashTable->remove(curFrame->file, curFrame->pageNo);
+					//if(status != OK) return status;
 					curFrame->Clear();
 					break;
 				}
 				//Page pinned
 				else{
-					cout<<"Pinned!"<<endl;
+					//cout<<"Pinned!"<<endl;
 					pdFrame++;
 					if(pdFrame == numBufs)
 						return BUFFEREXCEEDED;
@@ -110,18 +114,18 @@ const Status BufMgr::allocBuf(int & frame) {
 	}
 	//cout<<"Before delete!"<<endl;
 	//delete curFrame;
-	cout<<frame<<" Allocation success!"<<endl;
+	//cout<<frame<<" Allocation success!"<<endl;
 	return OK;
 }
 
 	
 const Status BufMgr::readPage(File* file, const int PageNo, Page*& page) {
-	cout<<"Reading page!"<<endl;
+	//cout<<"Reading page!"<<endl;
 	int frameNo = -1;
 	Status status = hashTable->lookup(file, PageNo, frameNo);
 	//Page already in the buffer pool
 	if(status == OK){
-		cout<<"In the buffer pool!"<<endl;
+		//cout<<"In the buffer pool!"<<endl;
 		if(!bufTable[frameNo].valid) cout<<"Should be valid!";
 		page = &(bufPool[frameNo]);
 		bufTable[frameNo].refbit = true;
@@ -129,7 +133,7 @@ const Status BufMgr::readPage(File* file, const int PageNo, Page*& page) {
 	}
 	//page not in the buffer pool
 	else{
-		cout<<"Not in the buffer pool!"<<endl;
+		//cout<<"Not in the buffer pool!"<<endl;
 		status = allocBuf(frameNo);
 		if(status != OK) return status;
 		page = &(bufPool[frameNo]);
@@ -140,28 +144,30 @@ const Status BufMgr::readPage(File* file, const int PageNo, Page*& page) {
 		bufTable[frameNo].Set(file, PageNo);
 			
 	}
-	cout<<"Read Success!"<<endl;
+	//cout<<(char*)page<<"for last test------------"<<endl;
+	//cout<<"Read Success!"<<endl;
 	return OK;
 }
 
 
 const Status BufMgr::unPinPage(File* file, const int PageNo, 
 			       const bool dirty) {
-	cout<<"Unpinning frame!"<<endl;
+	//cout<<"Unpinning frame!"<<endl;
 	int frameNo = -1;
 	Status status = hashTable->lookup(file, PageNo, frameNo);
 	if(status != OK) return status;
+	//cout<<"Unpinning "<<frameNo<<" frame!"<<endl;
 	if(!bufTable[frameNo].pinCnt) return PAGENOTPINNED;
 	bufTable[frameNo].pinCnt--;
 	if(dirty) 
 		bufTable[frameNo].dirty = true;
-	cout<<"Unpin success!"<<endl;
+	//cout<<"Unpin success!"<<endl;
 	return OK;
 }
 
 
 const Status BufMgr::allocPage(File* file, int& pageNo, Page*& page)  {
-	cout<<"Allocating Page"<<endl;
+	//cout<<"Allocating Page"<<endl;
 	int frameNo = -1;
 	Status status = file->allocatePage(pageNo);
 	if(status != OK) return status;
@@ -173,15 +179,16 @@ const Status BufMgr::allocPage(File* file, int& pageNo, Page*& page)  {
 	page = &(bufPool[frameNo]);
 	//load page from disk to buffer pool
 	status = file->readPage(pageNo, page);
+	if(status != OK) return status;
 	//status = readPage(file, pageNo, page);
 	//if(status != OK) return status;
-	cout<<"Page Allocation Success!"<<endl;
+	//cout<<"Page Allocation Success!"<<endl;
 	return OK;
 }
 
 
 const Status BufMgr::disposePage(File* file, const int pageNo) {
-	cout<<"Disposing Page!"<<endl;
+	//cout<<"Disposing Page!"<<endl;
 	int frameNo = -1;
 	Status status = hashTable->lookup(file, pageNo, frameNo);
 	if(status != OK) return status;
@@ -190,7 +197,7 @@ const Status BufMgr::disposePage(File* file, const int pageNo) {
 	if(status != OK) return status;
 	status = file->disposePage(pageNo);
 	if(status != OK) return status;
-	cout<<"Dispose success!"<<endl;
+	//cout<<"Dispose success!"<<endl;
 	return OK;
 }
 
@@ -199,16 +206,21 @@ const Status BufMgr::flushFile(const File* file) {
 	Status status;
 	for(int i = 0; i < numBufs; i++){
 		if(*bufTable[i].file == *file){
+			if(bufTable[i].pinCnt) return PAGEPINNED;
 			if(bufTable[i].dirty){
 				status = bufTable[i].file->writePage(bufTable[i].pageNo, &(bufPool[i]));
 				if(status != OK) return status;
 				bufTable[i].dirty = false;
 			}
+			cout<<"before hash remove!"<<endl;
 			status = hashTable->remove(file, bufTable[i].pageNo);
 			if(status != OK) return status;
+			cout<<"after hash remove!"<<endl;
 			bufTable[i].Clear();
 		}
+		cout<<"Flushing frame "<<i<<endl;
 	}
+	cout<<"flush success!"<<endl;
 	return OK;
 }
 
