@@ -59,6 +59,7 @@ BufMgr::~BufMgr() {
 
 const Status BufMgr::allocBuf(int & frame) {
 	//Add a variable to count for pin number for a iteration and clear it after one iteration
+	cout<<"Allocating "<<frame<<" frame"<<endl;
 	int pdFrame = 0;
 	int initPos = clockHand;
 	Status status;
@@ -99,15 +100,18 @@ const Status BufMgr::allocBuf(int & frame) {
 		}
 	}
 	delete curFrame;
+	cout<<frame<<" Allocation success!"<<endl;
 	return OK;
 }
 
 	
 const Status BufMgr::readPage(File* file, const int PageNo, Page*& page) {
+	cout<<"Reading page!"<<endl;
 	int frameNo = -1;
 	Status status = hashTable->lookup(file, PageNo, frameNo);
 	//Page already in the buffer pool
 	if(status == OK){
+		cout<<"In the buffer pool!"<<endl;
 		ASSERT(bufTable[frameNo].valid);
 		page = &(bufPool[frameNo]);
 		bufTable[frameNo].refbit = true;
@@ -115,6 +119,7 @@ const Status BufMgr::readPage(File* file, const int PageNo, Page*& page) {
 	}
 	//page not in the buffer pool
 	else{
+		cout<<"Not in the buffer pool!"<<endl;
 		status = allocBuf(frameNo);
 		if(status != OK) return status;
 		page = &(bufPool[frameNo]);
@@ -131,7 +136,7 @@ const Status BufMgr::readPage(File* file, const int PageNo, Page*& page) {
 
 const Status BufMgr::unPinPage(File* file, const int PageNo, 
 			       const bool dirty) {
-	// TODO: Implement this method by looking at the description in the writeup.
+	cout<<"Unpinning frame!"<<endl;
 	int frameNo = -1;
 	Status status = hashTable->lookup(file, PageNo, frameNo);
 	if(status != OK) return status;
@@ -139,12 +144,13 @@ const Status BufMgr::unPinPage(File* file, const int PageNo,
 	bufTable[frameNo].pinCnt--;
 	if(dirty) 
 		bufTable[frameNo].dirty = true;
+	cout<<"Unpin success!"<<endl;
 	return OK;
 }
 
 
 const Status BufMgr::allocPage(File* file, int& pageNo, Page*& page)  {
-	// TODO: Implement this method by looking at the description in the writeup.
+	cout<<"Allocating Page"<<endl;
 	int frameNo = -1;
 	Status status = file->allocatePage(pageNo);
 	if(status != OK) return status;
@@ -156,12 +162,13 @@ const Status BufMgr::allocPage(File* file, int& pageNo, Page*& page)  {
 	page = &(bufPool[frameNo]);
 	//status = readPage(file, pageNo, page);
 	//if(status != OK) return status;
+	cout<<"Page Allocation Success!"<<endl;
 	return OK;
 }
 
 
 const Status BufMgr::disposePage(File* file, const int pageNo) {
-	// TODO: Implement this method by looking at the description in the writeup.
+	cout<<"Disposing Page!"<<endl;
 	int frameNo = -1;
 	Status status = hashTable->lookup(file, pageNo, frameNo);
 	if(status != OK) return status;
@@ -170,15 +177,15 @@ const Status BufMgr::disposePage(File* file, const int pageNo) {
 	if(status != OK) return status;
 	status = file->disposePage(pageNo);
 	if(status != OK) return status;
+	cout<<"Dispose success!"<<endl;
 	return OK;
 }
 
 
 const Status BufMgr::flushFile(const File* file) {
-	// TODO: Implement this method by looking at the description in the writeup.
 	Status status;
 	for(int i = 0; i < numBufs; i++){
-		if(bufTable[i].file == file){
+		if(*bufTable[i].file == *file){
 			if(bufTable[i].dirty){
 				status = bufTable[i].file->writePage(bufTable[i].pageNo, &(bufPool[i]));
 				if(status != OK) return status;
