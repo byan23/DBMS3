@@ -154,8 +154,8 @@ const Status BufMgr::allocPage(File* file, int& pageNo, Page*& page)  {
 	if(status != OK) return status;
 	bufTable[frameNo].Set(file, pageNo);
 	page = &(bufPool[frameNo]);
-	status = readPage(file, pageNo, page);
-	if(status != OK) return status;
+	//status = readPage(file, pageNo, page);
+	//if(status != OK) return status;
 	return OK;
 }
 
