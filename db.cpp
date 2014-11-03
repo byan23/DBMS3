@@ -210,10 +210,10 @@ const Status File::open()
 }
 
 const Status File::close()
-{
+{cout<<"In File Close()"<<endl;
   if (openCnt <= 0)
     return FILENOTOPEN;
-
+cout<<"OpenCnt: "<<openCnt<<endl;
   openCnt--;
 
   // File actually closed only when open count goes to zero.
@@ -547,21 +547,21 @@ const Status DB::openFile(const string & fileName, File*& filePtr)
 // call Unix close() only if open count now goes to zero.
 
 const Status DB::closeFile(File* file)
-{
+{	//cout<<"Closing file"<<endl;
   if (!file) return BADFILEPTR;
 
-
+cout<<"Try closing"<<endl;
   // Close the file
   file->close();
 
   // If there are no remaining references to the file, then we should delete
   // the file object and remove it from the openFilesMap
-
+cout<<file->openCnt<<"-----------"<<endl;
   if (file->openCnt == 0)
     {
       if (openFiles.erase(file->fileName) != OK) return BADFILEPTR;
       delete file;
     }
-
+//cout<<"closing success"<<endl;
   return OK;
 }

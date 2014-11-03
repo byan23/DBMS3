@@ -36,7 +36,9 @@ int main()
 
     Error       error;
     DB          db;
-	File* fileTmp;
+	File* fileTmp1;
+	File* fileTmp2;
+	File* fileTmp3;
     File*	file1;
     File*	file2;
     File* 	file3;
@@ -82,9 +84,11 @@ int main()
     CALL(db.createFile("test.4"));
 
     CALL(db.openFile("test.1", file1));
-	CALL(db.openFile("test.1", fileTmp));
+	//CALL(db.openFile("test.1", fileTmp1));
     CALL(db.openFile("test.2", file2));
+	//CALL(db.openFile("test.2", fileTmp2));
     CALL(db.openFile("test.3", file3));
+	//CALL(db.openFile("test.3", fileTmp3));
     CALL(db.openFile("test.4", file4));
 
     // test buffer manager
@@ -155,7 +159,7 @@ int main()
     cout << "\nReading \"test.1\"...\n";
     cout << "Expected Result: ";
     cout << "Pages in order.  Values matching page number.\n\n";
-
+	//if(*file1 == *fileTmp1) cout<<"-------------------------------------------------!!"<<endl;
     for (i = 1; i < num/3; i++) {
 	//cout<<"Actually in the loop!-----------------"<<endl;
       CALL(bufMgr->readPage(file1, i, page2));
@@ -164,7 +168,7 @@ int main()
       ASSERT(memcmp(page2, &cmp, strlen((char*)&cmp)) == 0);
       CALL(bufMgr->unPinPage(file1, i, false));
     }
-
+	//if(*file1 == *fileTmp1) cout<<"----------------------------------------"<<endl;
     cout << "Test passed" <<endl<<endl;
 
     cout << "\nReading \"test.2\"...\n";
@@ -172,14 +176,17 @@ int main()
     cout << "Pages in order.  Values matching page number.\n\n";
 
     for (i = 1; i < num/3; i++) {
+	//if(file2 == fileTmp) cout<<"GOOD BOY!"<<endl;
       CALL(bufMgr->readPage(file2, i, page2));
       sprintf((char*)&cmp, "test.2 Page %d %7.1f", i, (float)i);
       ASSERT(memcmp(page2, &cmp, strlen((char*)&cmp)) == 0);
       cout << (char*)page2 << endl;
+	//if(file2 == fileTmp) cout<<"GOOD BOY!"<<endl;
       CALL(bufMgr->unPinPage(file2, i, false));
+	//if(file2 == fileTmp2) cout<<"GOOD BOY!"<<endl;
     }
     cout << "Test passed" <<endl<<endl;
-
+	//if(*file2 == *fileTmp2) cout<<"GOOD BOY!------------------------------------------------"<<endl;
 
     cout << "\nReading \"test.3\"...\n";
     cout << "Expected Result: ";
@@ -211,7 +218,7 @@ int main()
     error.print(status);
 
     cout << "Test passed" <<endl<<endl;
-  	bufMgr->printSelf();
+  //	bufMgr->printSelf();
     for (i = 0; i < num; i++) {
       CALL(bufMgr->allocPage(file4, j[i], page));
       sprintf((char*)page, "test.4 Page %d %7.1f", j[i], (float)j[i]);
@@ -235,7 +242,7 @@ int main()
     cout << "\nReading \"test.1\"...\n";
     cout << "Expected Result: ";
     cout << "Pages in order.  Values matching page number.\n\n";
-
+	//if(*file1 == *fileTmp1) cout<<"GOOD BOY!!!!!!-------------------------------------"<<endl;
     for (i = 1; i < num; i++) {
 	//cout<<"before "<<(char*)page<<endl;
 	//if(file1 == fileTmp) cout<<"GOOD BOY!"<<endl;
@@ -246,7 +253,7 @@ int main()
       ASSERT(memcmp(page, &cmp, strlen((char*)&cmp)) == 0);
       cout << (char*)page << endl;
     }
-    
+    //if(*file1 == *fileTmp1) cout<<"GOOD BOY-------------------------------!!!!!!!!!!!!!!!!"<<endl;
     cout << "Test passed" <<endl<<endl;
 
     cout << "flushing file with pages still pinned. Should generate an error" << endl;
@@ -257,12 +264,15 @@ int main()
 
     for (i = 1; i < num; i++) 
       CALL(bufMgr->unPinPage(file1, i, true));
-     cout<<"Ready to flush!"<<endl;
+     //cout<<"Ready to flush!"<<endl;
     CALL(bufMgr->flushFile(file1));
-
 	cout<<"FLUSH SUCCESS!"<<endl;
+	//if(*file1 == *fileTmp1) cout<<"GOOD BOY!"<<endl;
     CALL(db.closeFile(file1));
 	cout<<"close file1 success!"<<endl;
+	//FAIL(status = db.closeFile(file2));
+	//error.print(status);
+	//if(file2 == fileTmp) cout<<"GOOD BOY!"<<endl;
     CALL(db.closeFile(file2));
 	cout<<"close file2 success!"<<endl;
     CALL(db.closeFile(file3));

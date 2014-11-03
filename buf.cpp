@@ -205,22 +205,25 @@ const Status BufMgr::disposePage(File* file, const int pageNo) {
 const Status BufMgr::flushFile(const File* file) {
 	Status status;
 	for(int i = 0; i < numBufs; i++){
-		if(*bufTable[i].file == *file){
+		//cout<<"in flush loop"<<endl;
+		if(bufTable[i].file == file){
+			//cout<<"match!"<<endl;
 			if(bufTable[i].pinCnt) return PAGEPINNED;
 			if(bufTable[i].dirty){
+				//cout<<"dirty!"<<endl;
 				status = bufTable[i].file->writePage(bufTable[i].pageNo, &(bufPool[i]));
 				if(status != OK) return status;
 				bufTable[i].dirty = false;
 			}
-			cout<<"before hash remove!"<<endl;
+			//cout<<"before hash remove!"<<endl;
 			status = hashTable->remove(file, bufTable[i].pageNo);
 			if(status != OK) return status;
 			cout<<"after hash remove!"<<endl;
 			bufTable[i].Clear();
 		}
-		cout<<"Flushing frame "<<i<<endl;
+		//cout<<"Flushing frame "<<i<<endl;
 	}
-	cout<<"flush success!"<<endl;
+	//cout<<"flush success!"<<endl;
 	return OK;
 }
 
