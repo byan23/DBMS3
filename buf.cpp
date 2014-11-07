@@ -45,14 +45,16 @@ BufMgr::~BufMgr() {
 	// Flushes out all dirty pages and deallocates the buffer pool and the BufDesc table.
 	//Status status;
 	for(int i = 0; i < numBufs; i++){
-		if(bufTable[i].dirty){
+		if(bufTable[i].valid && bufTable[i].dirty){
 			//flush, performs on bufPool (a Page instance)
 			bufTable[i].file->writePage(bufTable[i].pageNo, &(bufPool[i]));
 		}
-	}	
+	}
+	cout<<"down here!"<<endl;	
 	delete [] bufTable;
+	cout<<"down here2!"<<endl;
 	delete [] bufPool;
-	delete hashTable;
+	//delete hashTable;
 	
 }
 
@@ -70,8 +72,6 @@ const Status BufMgr::allocBuf(int & frame) {
 		//cout<<"Allocating "<<frame<<" frame (in process)!"<<endl;
 		//cout<<numBufs<<" buf size!"<<endl; 
 		curFrame = &(bufTable[frame]);
-		//cout<<"Made it?!"<<endl;
-		//cout<<curFrame->valid<<"!"<<endl;
 		//frame not having a valid page: empty
 		if(!curFrame->valid)	break;
 		//frame has a valid page
@@ -83,8 +83,8 @@ const Status BufMgr::allocBuf(int & frame) {
 				//cout<<"Not ref!"<<endl;
 				if(!curFrame->pinCnt){
 					//cout<<"Not Pinned!"<<endl;
-					status = hashTable->remove(curFrame->file, curFrame->pageNo);
-					if(status != OK) return status;
+					//status = hashTable->remove(curFrame->file, curFrame->pageNo);
+					//if(status != OK) return status;
 					if(curFrame->dirty){	//flushes page to Disk if dirty
 						//cout<<"Dirty!"<<endl;
 						//status = hashTable->remove(curFrame->file, curFrame->pageNo);
@@ -93,9 +93,12 @@ const Status BufMgr::allocBuf(int & frame) {
 						status =  curFrame->file->writePage(curFrame->pageNo, &(bufPool[frame]));
 						if(status != OK)
 							return status;
+						curFrame->dirty = false;
 					}
 					//status = hashTable->remove(curFrame->file, curFrame->pageNo);
 					//if(status != OK) return status;
+					status = hashTable->remove(curFrame->file, curFrame->pageNo);
+					if(status != OK) return status;
 					curFrame->Clear();
 					break;
 				}
@@ -112,8 +115,6 @@ const Status BufMgr::allocBuf(int & frame) {
 			}
 		}
 	}
-	//cout<<"Before delete!"<<endl;
-	//delete curFrame;
 	//cout<<frame<<" Allocation success!"<<endl;
 	return OK;
 }
@@ -126,7 +127,7 @@ const Status BufMgr::readPage(File* file, const int PageNo, Page*& page) {
 	//Page already in the buffer pool
 	if(status == OK){
 		//cout<<"In the buffer pool!"<<endl;
-		if(!bufTable[frameNo].valid) cout<<"Should be valid!";
+		//if(!bufTable[frameNo].valid) cout<<"Should be valid!";
 		page = &(bufPool[frameNo]);
 		bufTable[frameNo].refbit = true;
 		bufTable[frameNo].pinCnt++;		
@@ -144,7 +145,6 @@ const Status BufMgr::readPage(File* file, const int PageNo, Page*& page) {
 		bufTable[frameNo].Set(file, PageNo);
 			
 	}
-	//cout<<(char*)page<<"for last test------------"<<endl;
 	//cout<<"Read Success!"<<endl;
 	return OK;
 }
@@ -180,24 +180,24 @@ const Status BufMgr::allocPage(File* file, int& pageNo, Page*& page)  {
 	//load page from disk to buffer pool
 	status = file->readPage(pageNo, page);
 	if(status != OK) return status;
-	//status = readPage(file, pageNo, page);
-	//if(status != OK) return status;
-	//cout<<"Page Allocation Success!"<<endl;
 	return OK;
 }
 
 
 const Status BufMgr::disposePage(File* file, const int pageNo) {
-	//cout<<"Disposing Page!"<<endl;
+	cout<<"Disposing Page!"<<endl;
 	int frameNo = -1;
 	Status status = hashTable->lookup(file, pageNo, frameNo);
-	if(status != OK) return status;
-	bufTable[frameNo].Clear();
-	status = hashTable->remove(file, pageNo);
-	if(status != OK) return status;
+	if(status == OK){
+		cout<<"Found Page "<<pageNo<<" in Frame "<<frameNo<<" !"<<endl;
+		bufTable[frameNo].Clear();
+		//cout<<"BEFORE REMOVE"
+		status = hashTable->remove(file, pageNo);
+		if(status != OK) return status;
+	}
 	status = file->disposePage(pageNo);
 	if(status != OK) return status;
-	//cout<<"Dispose success!"<<endl;
+	cout<<"Dispose success!"<<endl;
 	return OK;
 }
 
@@ -216,9 +216,10 @@ const Status BufMgr::flushFile(const File* file) {
 				bufTable[i].dirty = false;
 			}
 			//cout<<"before hash remove!"<<endl;
+			//cout<<"removing "<<i<<" frame"<<endl;
 			status = hashTable->remove(file, bufTable[i].pageNo);
 			if(status != OK) return status;
-			cout<<"after hash remove!"<<endl;
+			//cout<<"after hash remove!"<<endl;
 			bufTable[i].Clear();
 		}
 		//cout<<"Flushing frame "<<i<<endl;

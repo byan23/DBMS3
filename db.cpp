@@ -547,10 +547,9 @@ const Status DB::openFile(const string & fileName, File*& filePtr)
 // call Unix close() only if open count now goes to zero.
 
 const Status DB::closeFile(File* file)
-{	//cout<<"Closing file"<<endl;
+{
   if (!file) return BADFILEPTR;
 
-cout<<"Try closing"<<endl;
   // Close the file
   file->close();
 
@@ -562,6 +561,6 @@ cout<<file->openCnt<<"-----------"<<endl;
       if (openFiles.erase(file->fileName) != OK) return BADFILEPTR;
       delete file;
     }
-//cout<<"closing success"<<endl;
   return OK;
 }
+

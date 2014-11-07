@@ -36,9 +36,9 @@ int main()
 
     Error       error;
     DB          db;
-	File* fileTmp1;
-	File* fileTmp2;
-	File* fileTmp3;
+	//File* fileTmp1;
+	//File* fileTmp2;
+	//File* fileTmp3;
     File*	file1;
     File*	file2;
     File* 	file3;
@@ -262,28 +262,37 @@ int main()
 
     cout << "Test passed"<<endl<<endl;
 
-    for (i = 1; i < num; i++) 
+	bufMgr->printSelf();
+	cout<<"Test for DISPOSE!"<<endl;
+	for(i = 2; i<num/2; i++)
+		CALL(bufMgr->disposePage(file1, i));
+	cout<<"---------------------------------------------------------------------------------"<<endl;	
+	bufMgr->printSelf();
+	cout<<"Test Passed!"<<endl;
+
+    for (i = num/2; i < num; i++) 
       CALL(bufMgr->unPinPage(file1, i, true));
+    CALL(bufMgr->unPinPage(file1, 1, true));
      //cout<<"Ready to flush!"<<endl;
     CALL(bufMgr->flushFile(file1));
-	cout<<"FLUSH SUCCESS!"<<endl;
+	//cout<<"FLUSH SUCCESS!"<<endl;
 	//if(*file1 == *fileTmp1) cout<<"GOOD BOY!"<<endl;
     CALL(db.closeFile(file1));
-	cout<<"close file1 success!"<<endl;
+	//cout<<"close file1 success!"<<endl;
 	//FAIL(status = db.closeFile(file2));
 	//error.print(status);
 	//if(file2 == fileTmp) cout<<"GOOD BOY!"<<endl;
     CALL(db.closeFile(file2));
-	cout<<"close file2 success!"<<endl;
+	//cout<<"close file2 success!"<<endl;
     CALL(db.closeFile(file3));
-	cout<<"close file3 success!"<<endl;
+	//cout<<"close file3 success!"<<endl;
     CALL(db.closeFile(file4));
-	cout<<"CLOSE SUCCESS!"<<endl;
+	//cout<<"CLOSE SUCCESS!"<<endl;
 	CALL(db.destroyFile("test.1"));
 	CALL(db.destroyFile("test.2"));
 	CALL(db.destroyFile("test.3"));
     CALL(db.destroyFile("test.4"));
-	cout<<"DESTROY SUCCESS!"<<endl;
+	//cout<<"DESTROY SUCCESS!"<<endl;
     delete bufMgr;
 
     cout << endl << "Passed all tests." << endl;
